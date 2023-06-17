@@ -1,11 +1,13 @@
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include <zmk/event_manager.h>
 #include <zmk/keymap.h>
 #include <zmk/events/activity_state_changed.h>
 #include <zmk/events/ble_active_profile_changed.h>
 #include <zmk/events/layer_state_changed.h>
+#include <zmk/events/keycode_state_changed.h>
+
 
 void display_battery(void);
 void display_value(uint8_t value);
@@ -69,3 +71,23 @@ int layer_event_listener(const zmk_event_t *eh) {
 
 ZMK_LISTENER(layer, layer_event_listener);
 ZMK_SUBSCRIPTION(layer, zmk_layer_state_changed);
+
+static int hid_listener_keycode_pressed(const struct zmk_keycode_state_changed *ev) {
+    if (ev->keycode == HID_USAGE_KEY_KEYBOARD_F24) {
+        display_battery();
+    }
+    return 0;
+}
+
+int led_keycode_listener(const zmk_event_t *eh) {
+    const struct zmk_keycode_state_changed *ev = as_zmk_keycode_state_changed(eh);
+    if (ev) {
+        if (ev->state) {
+            hid_listener_keycode_pressed(ev);
+        }
+    }
+    return 0;
+}
+
+ZMK_LISTENER(keycode, led_keycode_listener);
+ZMK_SUBSCRIPTION(keycode, zmk_keycode_state_changed);

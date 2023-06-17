@@ -12,10 +12,10 @@ config ZMK_BLE
 config ZMK_USB
 	default y
 
-config ZMK_BATTERY
+config ZMK_BATTERY_VOLTAGE_DIVIDER
 	default y
 
 config USB_DEVICE_MANUFACTURER
 	default "ZMK Project"
-
+    
 endif

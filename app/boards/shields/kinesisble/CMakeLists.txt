@@ -1,2 +1,2 @@
-target_sources_ifdef(CONFIG_SHIELD_KINESISBLE app PRIVATE boards/shields/kinesisble/leds/led_control.c)
-target_sources_ifdef(CONFIG_SHIELD_KINESISBLE app PRIVATE boards/shields/kinesisble/leds/led_worker.c)
+target_sources_ifdef(CONFIG_SHIELD_KINESISBLE app PRIVATE leds/led_control.c)
+target_sources_ifdef(CONFIG_SHIELD_KINESISBLE app PRIVATE leds/led_worker.c)

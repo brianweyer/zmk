@@ -55,15 +55,19 @@
 
 #include <dt-bindings/zmk/matrix_transform.h>
 #include <dt-bindings/zmk/battery_status.h>
+#include "kinesisble-pinctrl.dtsi"
+#include "../../usb_console.dtsi"
 
 / {
     chosen {
         zmk,kscan = &kscan0;
         zmk,matrix_transform = &default_transform;
-        zmk,battery_status = &status_leds;
+        zephyr,code-partition = &code_partition;
+        // zmk,battery_status = &leds;
+        // zephyr,console = &cdc_acm_uart;
     };
 
-    leds {
+    leds: leds {
 		compatible = "gpio-leds";
         ledu1: led_u1 {
             gpios = <&feather_header 3 GPIO_ACTIVE_HIGH>;
@@ -85,70 +89,60 @@
             label = "KEY LED";
             status = "okay";
         };
-        led_pow: led_pow {
-            gpios = <&feather_header 5 GPIO_ACTIVE_HIGH>;
-            label = "BUTTON LED";
-            status = "okay";
-        };
     };
 
-    status_leds: leds {
-		compatible = "gpio-leds";
-        ledu1: led_u1 {
-            gpios = <&feather_header 3 GPIO_ACTIVE_HIGH>;
-            label = "CAP LED";
-            status = "okay";
-        };
-        ledu2: led_u2 {
-            gpios = <&feather_header 4 GPIO_ACTIVE_HIGH>;
-            label = "NUM LED";
-            status = "okay";
-        };
-        ledu3: led_u3 {
-            gpios = <&feather_header 16 GPIO_ACTIVE_HIGH>;
-            label = "SCR LED";
-            status = "okay";
-        };
-        ledu4: led_u4 {
-            gpios = <&feather_header 15 GPIO_ACTIVE_HIGH>;
-            label = "KEY LED";
-            status = "okay";
-        };
-        led_pow: led_pow {
-            gpios = <&feather_header 5 GPIO_ACTIVE_HIGH>;
-            label = "BUTTON LED";
-            status = "okay";
-        };
-    };
+    // status_leds: leds {
+	// 	compatible = "gpio-leds";
+    //     ledu1: led_u1 {
+    //         gpios = <&feather_header 3 GPIO_ACTIVE_HIGH>;
+    //         label = "CAP LED";
+    //         status = "okay";
+    //     };
+    //     ledu2: led_u2 {
+    //         gpios = <&feather_header 4 GPIO_ACTIVE_HIGH>;
+    //         label = "NUM LED";
+    //         status = "okay";
+    //     };
+    //     ledu3: led_u3 {
+    //         gpios = <&feather_header 16 GPIO_ACTIVE_HIGH>;
+    //         label = "SCR LED";
+    //         status = "okay";
+    //     };
+    //     ledu4: led_u4 {
+    //         gpios = <&feather_header 15 GPIO_ACTIVE_HIGH>;
+    //         label = "KEY LED";
+    //         status = "okay";
+    //     };
+    //     led_pow: led_pow {
+    //         gpios = <&feather_header 5 GPIO_ACTIVE_HIGH>;
+    //         label = "BUTTON LED";
+    //         status = "okay";
+    //     };
+    // };
 
 	pwmleds {
 		compatible = "pwm-leds";
-		pwm_ledu1: pwm_led_u1 {
-			pwms = <&pwm0 28>;
+		pwm_ledu1 {
+			pwms = <&pwm0 0 10000 PWM_POLARITY_NORMAL>;
 			label = "PWM CAP LED";
 		};
-		pwm_ledu2: pwm_led_u2 {
-			pwms = <&pwm0 2>;
+		pwm_ledu2 {
+			pwms = <&pwm0 2 10000 PWM_POLARITY_NORMAL>;
 			label = "PWM NUM LED";
 		};
-		pwm_ledu3: pwm_led_u3 {
-			pwms = <&pwm0 26>;
+		pwm_ledu3 {
+			pwms = <&pwm0 26 10000 PWM_POLARITY_NORMAL>;
 			label = "PWM SCR LED";
 		};
-        pwm_ledu4: pwm_led_u4 {
-			pwms = <&pwm0 7>;
+        pwm_ledu4 {
+			pwms = <&pwm0 7 10000 PWM_POLARITY_NORMAL>;
 			label = "KEY SCR LED";
-		};
-        pwm_led_pow: pwm_led_pow {
-			pwms = <&pwm0 3>;
-			label = "PWM BUTTON LED";
 		};
     };
 
 
     kscan0: kscan {
         compatible = "zmk,kscan-gpio-matrix";
-        label = "KSCAN";
 
         diode-direction = "col2row";
         row-gpios
@@ -182,7 +176,6 @@
 
     vbatt {
 		compatible = "zmk,battery-voltage-divider";
-		label = "BATTERY";
 		io-channels = <&adc 5>;
 		output-ohms = <100000>;
 		full-ohms = <(100000 + 100000)>;
@@ -219,36 +212,47 @@ default_transform: keymap_transform_0 {
     };
 };
 
+// &pwm0 {
+// 	status = "okay";
+// 	ch0-pin = <28>;
+// 	ch0-inverted;
+// 	ch1-pin = <2>;
+// 	ch1-inverted;
+// 	ch2-pin = <26>;
+// 	ch2-inverted;
+// 	ch3-pin = <7>;
+// 	ch3-inverted;
+// };
+
+// &pwm0 {
+// 	status = "okay";
+// 	pinctrl-0 = <&pwm0_cap>;
+// 	pinctrl-1 = <2>;
+// 	pinctrl-2 = <26>;
+// 	pinctrl-3 = <7>;
+//     pinctrl-4 = <3>;
+// 	pinctrl-names = "CAP", "NUM", "SCR", "SCR", "PWR";
+// };
+
 &pwm0 {
 	status = "okay";
-	ch0-pin = <28>;
-	ch0-inverted;
-	ch1-pin = <2>;
-	ch1-inverted;
-	ch2-pin = <26>;
-	ch2-inverted;
-	ch3-pin = <7>;
-	ch3-inverted;
-};
-
-&adc {
-	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 
 /* MCP23s17 GPIO Expander */
-&feather_spi {
-    label="SPI1";
+&spi1 {
     status = "okay";
     cs-gpios = <&feather_header 14 1>;
     compatible = "nordic,nrf-spi";
-    sck-pin = <14>;
-    mosi-pin = <13>;
-    miso-pin = <15>;
+    pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
 
     spi_gpio: mcp23s17@0 {	
         status = "okay";
-    	label="mcp23s17";
         compatible = "microchip,mcp23s17";
         gpio-controller;
         #gpio-cells = <2>;
@@ -257,3 +261,50 @@ default_transform: keymap_transform_0 {
 	    ngpios = <16>;
     };
 };
+
+&flash0 {
+    /delete-node/ partitions;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sd_partition: partition@0 {
+			label = "softdevice";
+			reg = <0x00000000 0x00026000>;
+		};
+		code_partition: partition@26000 {
+			label = "code_partition";
+			reg = <0x00026000 0x000c6000>;
+		};
+
+		/*
+		 * The flash starting at 0x000ec000 and ending at
+		 * 0x000f3fff is reserved for use by the application.
+		 */
+
+		/*
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@ec000 {
+			label = "storage";
+			reg = <0x000ec000 0x00008000>;
+		};
+
+		boot_partition: partition@f4000 {
+			label = "adafruit_boot";
+			reg = <0x000f4000 0x0000c000>;
+		};
+	};
+};
+
+// &usbd {
+// 	status = "okay";
+// 	cdc_acm_uart: cdc_acm_uart {
+// 		compatible = "zephyr,cdc-acm-uart";
+// 	};
+// };

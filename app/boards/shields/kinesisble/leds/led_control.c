@@ -3,14 +3,14 @@
  *
  * SPDX-License-Identifier: MIT
  */
-#include <zephyr.h>
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
 
-#include <bluetooth/services/bas.h>
+#include <zephyr/bluetooth/services/bas.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 #include <zmk/usb.h>
@@ -25,7 +25,6 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 struct led {
     const struct device *gpio_dev;
-    const char *gpio_dev_name;
     const char *gpio_pin_name;
     unsigned int gpio_pin;
     unsigned int gpio_flags;
@@ -38,41 +37,37 @@ void display_value(uint8_t value);
 enum { LED_CAP, LED_NUM, LED_SCR, LED_KEY };
 struct led leds[] = {[LED_CAP] =
                          {
-                             .gpio_dev = NULL,
-                             .gpio_dev_name = DT_GPIO_LABEL(LED_1_NODE, gpios),
-                             .gpio_pin_name = DT_LABEL(LED_1_NODE),
+                             .gpio_dev = DEVICE_DT_GET(DT_GPIO_CTLR(LED_1_NODE, gpios)),
+                             .gpio_pin_name = DT_PROP(LED_1_NODE, label),
                              .gpio_pin = DT_GPIO_PIN(LED_1_NODE, gpios),
                              .gpio_flags = GPIO_OUTPUT | DT_GPIO_FLAGS(LED_1_NODE, gpios),
                          },
                      [LED_NUM] =
                          {
-                             .gpio_dev = NULL,
-                             .gpio_dev_name = DT_GPIO_LABEL(LED_2_NODE, gpios),
-                             .gpio_pin_name = DT_LABEL(LED_2_NODE),
+                             .gpio_dev = DEVICE_DT_GET(DT_GPIO_CTLR(LED_2_NODE, gpios)),
+                             .gpio_pin_name = DT_PROP(LED_2_NODE, label),
                              .gpio_pin = DT_GPIO_PIN(LED_2_NODE, gpios),
                              .gpio_flags = GPIO_OUTPUT | DT_GPIO_FLAGS(LED_2_NODE, gpios),
                          },
                      [LED_SCR] =
                          {
-                             .gpio_dev = NULL,
-                             .gpio_dev_name = DT_GPIO_LABEL(LED_3_NODE, gpios),
-                             .gpio_pin_name = DT_LABEL(LED_3_NODE),
+                             .gpio_dev = DEVICE_DT_GET(DT_GPIO_CTLR(LED_3_NODE, gpios)),
+                             .gpio_pin_name = DT_PROP(LED_3_NODE, label),
                              .gpio_pin = DT_GPIO_PIN(LED_3_NODE, gpios),
                              .gpio_flags = GPIO_OUTPUT | DT_GPIO_FLAGS(LED_3_NODE, gpios),
                          },
                      [LED_KEY] = {
-                         .gpio_dev = NULL,
-                         .gpio_dev_name = DT_GPIO_LABEL(LED_4_NODE, gpios),
-                         .gpio_pin_name = DT_LABEL(LED_4_NODE),
+                         .gpio_dev = DEVICE_DT_GET(DT_GPIO_CTLR(LED_4_NODE, gpios)),
+                         .gpio_pin_name = DT_PROP(LED_4_NODE, label),
                          .gpio_pin = DT_GPIO_PIN(LED_4_NODE, gpios),
                          .gpio_flags = GPIO_OUTPUT | DT_GPIO_FLAGS(LED_4_NODE, gpios),
                      }};
 
 static int led_init(const struct device *dev) {
     for (int i = 0; i < (sizeof(leds) / sizeof(struct led)); i++) {
-        leds[i].gpio_dev = device_get_binding(leds[i].gpio_dev_name);
+        leds[i].gpio_dev = device_get_binding(leds[i].gpio_dev->name);
         if (leds[i].gpio_dev == NULL) {
-            printk("Error: didn't find %s device\n", leds[i].gpio_dev_name);
+            printk("Error: didn't find %s device\n", leds[i].gpio_dev->name);
             return -EIO;
         };
 
@@ -110,7 +105,7 @@ void display_battery(void) {
     uint8_t level = bt_bas_get_battery_level();
     if (level <= 10) {
         for (int i = 0; i < 5; i++) {
-            blink(&leds[0], BATTERY_LED_SLEEP_PERIOD);
+            blink(&leds[0], BATTERY_LED_SLEEP_PERIOD*40);
             k_msleep(BATTERY_LED_SLEEP_PERIOD);
         }
     } else {
@@ -128,7 +123,7 @@ void display_battery(void) {
             ledON(&leds[3]);
             k_msleep(BATTERY_LED_SLEEP_PERIOD);
         }
-        k_msleep(BATTERY_LED_SLEEP_PERIOD);
+        k_msleep(BATTERY_LED_SLEEP_PERIOD*40);
     }
     led_all_OFF();
 }
