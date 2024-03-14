@@ -30,7 +30,7 @@ macOS 13.0 (Ventura) Finder may report an error code 100093 when copying `<firmw
 ### CMake Error
 
 An error along the lines of `CMake Error at (zmk directory)/zephyr/cmake/generic_toolchain.cmake:64 (include): include could not find load file:` during firmware compilation indicates that the Zephyr Environment Variables are not properly defined.
-For more information, click [here](../docs/development/setup.md#environment-variables).
+For more information, see [toolchain setup documentation](../docs/development/setup.mdx).
 
 ### West Build Errors
 
@@ -58,8 +58,12 @@ A `devicetree_unfixed.h` error that follows with an "undeclared here" string ind
 
 In this example, the error string `DT_N_S_keymap_S_symbol_layer_P_bindings_IDX_12_PH_P_label` indicates a problem with the key binding in position `12` in the `symbol_layer` of the keymap.
 
-:::note
+:::info
 Key positions are numbered starting from `0` at the top left key on the keymap, incrementing horizontally, row by row.
+:::
+
+:::tip
+A common mistake that leads to this error is to use [key press keycodes](behaviors/key-press.md) without the leading `&kp` binding. That is, having entries such as `SPACE` that should have been `&kp SPACE`.
 :::
 
 ### Split Keyboard Halves Unable to Pair

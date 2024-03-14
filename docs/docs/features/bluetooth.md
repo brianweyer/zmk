@@ -22,7 +22,7 @@ The only known vulnerability in the protocol is a risk of an active man-in-the-m
 By default, ZMK supports five "profiles" for selecting which bonded host
 device should receive the keyboard input.
 
-:::note Connection Management
+:::note[Connection Management]
 
 When pairing to a host device ZMK saves bond information to the selected profile. It will not replace this automatically when you initiate pairing with another device. To pair with a new device select an unused profile with or clearing the current profile, using the [`&bt` behavior](../behaviors/bluetooth.md) on your keyboard.
 
@@ -42,11 +42,11 @@ Management of the bluetooth in ZMK is accomplished using the [`&bt` behavior](..
 
 Some users may experience a poor connection between the keyboard and the host. This might be due to poor quality BLE hardware, a metal enclosure on the keyboard or host, or the distance between them. Increasing the transmit power of the keyboard's BLE radio may reduce the severity of this problem. To do this, set the `CONFIG_BT_CTLR_TX_PWR_PLUS_8` configuration value in the `.conf` file of your user config directory as such:
 
-```
+```ini
 CONFIG_BT_CTLR_TX_PWR_PLUS_8=y
 ```
 
-For the `nRF52840`, the value `PLUS_8` can be set to any multiple of four between `MINUS_20` and `PLUS_8`. The default value for this config is `0`, but if you are having connection issues it is recommended to set it to `PLUS_8` because the power consumption difference is negligible. For more information on changing the transmit power of your BLE device, please refer to [the Zephyr docs.](https://docs.zephyrproject.org/latest/kconfig.html#CONFIG_BT_CTLR_TX_PWR)
+For the `nRF52840`, the value `PLUS_8` can be set to any multiple of four between `MINUS_20` and `PLUS_8`. The default value for this config is `0`, but if you are having connection issues it is recommended to set it to `PLUS_8` because the power consumption difference is negligible. For more information on changing the transmit power of your BLE device, please refer to [the Zephyr docs.](https://docs.zephyrproject.org/3.5.0/kconfig.html#CONFIG_BT_CTLR_TX_PWR)
 
 :::info
 This setting can also improve the connection strength between the keyboard halves for split keyboards.
@@ -64,7 +64,7 @@ There are a few known issues related to BLE and ZMK:
 
 There is a known issue with Windows failing to update the battery information after connecting to a ZMK keyboard. You can work around this Windows bug by overriding a [Bluetooth config variable](../config/bluetooth.md) to force battery notifications even if a host neglects to subscribe to them:
 
-```
+```ini
 CONFIG_BT_GATT_ENFORCE_SUBSCRIPTION=n
 ```
 
