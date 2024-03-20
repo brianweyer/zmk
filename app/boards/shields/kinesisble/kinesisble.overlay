@@ -63,8 +63,8 @@
         zmk,kscan = &kscan0;
         zmk,matrix_transform = &default_transform;
         zephyr,code-partition = &code_partition;
-        // zmk,battery_status = &leds;
-        // zephyr,console = &cdc_acm_uart;
+        zmk,battery = &vbatt;
+        zephyr,console = &cdc_acm_uart;
     };
 
     leds: leds {
@@ -174,7 +174,7 @@
             ;
     };
 
-    vbatt {
+    vbatt: vbatt {
 		compatible = "zmk,battery-voltage-divider";
 		io-channels = <&adc 5>;
 		output-ohms = <100000>;
@@ -302,9 +302,9 @@ default_transform: keymap_transform_0 {
 	};
 };
 
-// &usbd {
-// 	status = "okay";
-// 	cdc_acm_uart: cdc_acm_uart {
-// 		compatible = "zephyr,cdc-acm-uart";
-// 	};
-// };
+&usbd {
+	status = "okay";
+	cdc_acm_uart: cdc_acm_uart {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
