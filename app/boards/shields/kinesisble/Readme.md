@@ -11,7 +11,7 @@ https://github.com/ergodone/KinesisBLE
 
 To build firmware
 From app directory do:
- west build -p -b adafruit_feather_nrf52840 -- -DSHIELD=kinesisble
+CONFIG_ZMK_BLE_EXPERIMENTAL_SEC=y CONFIG_ZMK_BLE_EXPERIMENTAL_CONN=y west build -p -b adafruit_feather_nrf52840 -- -DSHIELD=kinesisble
 
 
 To restore original Adafruit firmware download from:
