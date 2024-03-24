@@ -1,4 +1,11 @@
 
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/__assert.h>
+#include <string.h>
 #include <zephyr/logging/log.h>
 
 #include <zmk/event_manager.h>
@@ -9,8 +16,8 @@
 #include <zmk/events/keycode_state_changed.h>
 
 
-void display_battery(void);
-void display_value(uint8_t value);
+void send_display_battery(void);
+void send_display_value(uint8_t value);
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
@@ -25,7 +32,7 @@ int userled_event_listener(const zmk_event_t *eh) {
     switch (ev->state) {
     case ZMK_ACTIVITY_ACTIVE:
         if (prior_state_was_sleep)
-            display_battery();
+            send_display_battery();
         prior_state_was_sleep = false;
         break;
     case ZMK_ACTIVITY_SLEEP:
@@ -50,7 +57,7 @@ int ble_event_listener(const zmk_event_t *eh) {
         return -ENOTSUP;
     }
     LOG_DBG("Setting BLE profile: %d", ev->index);
-    display_value(ev->index + 1);
+    send_display_value(ev->index + 1);
     return 0;
 }
 
@@ -64,7 +71,7 @@ int layer_event_listener(const zmk_event_t *eh) {
     }
     LOG_DBG("*****zmk_layer_state_changed listener: %d %d", ev->layer, ev->state);
     if (ev->state) {
-        display_value(ev->layer + 1);
+        send_display_value(ev->layer + 1);
     }
     return 0;
 }
@@ -74,7 +81,7 @@ ZMK_SUBSCRIPTION(layer, zmk_layer_state_changed);
 
 static int hid_listener_keycode_pressed(const struct zmk_keycode_state_changed *ev) {
     if (ev->keycode == HID_USAGE_KEY_KEYBOARD_F24) {
-        display_battery();
+        send_display_battery();
     }
     return 0;
 }

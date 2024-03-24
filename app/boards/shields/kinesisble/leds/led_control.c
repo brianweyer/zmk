@@ -5,8 +5,12 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/__assert.h>
+#include <string.h>
+
 
 #include <zephyr/bluetooth/services/bas.h>
 
@@ -17,6 +21,12 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/events/usb_conn_state_changed.h>
 #include <zmk/event_manager.h>
 #include <zmk/events/battery_state_changed.h>
+
+/* size of stack area used by each thread */
+#define STACKSIZE 1024
+
+/* scheduling priority used by each thread */
+#define PRIORITY 7
 
 #define LED_1_NODE DT_NODELABEL(ledu1)
 #define LED_2_NODE DT_NODELABEL(ledu2)
@@ -30,9 +40,16 @@ struct led {
     unsigned int gpio_flags;
 };
 
+struct led_data_t {
+    void *fifo_reserved;
+    uint32_t index;
+};
+
+K_FIFO_DEFINE(led_fifo);
+
 static void blink(const struct led *, uint32_t);
-void display_battery(void);
-void display_value(uint8_t value);
+void send_display_battery(void);
+void send_display_value(uint8_t value);
 
 enum { LED_CAP, LED_NUM, LED_SCR, LED_KEY };
 struct led leds[] = {[LED_CAP] =
@@ -149,3 +166,47 @@ void display_value(uint8_t value) {
     k_msleep(LEVEL_LED_SLEEP_PERIOD);
     led_all_OFF();
 };
+
+void send_display_value(uint8_t index) {
+    struct led_data_t tx_data = { .index = index };
+
+    size_t size = sizeof(struct led_data_t);
+    char *mem_ptr = k_malloc(size);
+    __ASSERT_NO_MSG(mem_ptr != 0);
+
+    memcpy(mem_ptr, &tx_data, size);
+
+    k_fifo_put(&led_fifo, mem_ptr);
+}
+
+void send_display_battery() {
+    struct led_data_t tx_data = {};
+
+    size_t size = sizeof(struct led_data_t);
+    char *mem_ptr = k_malloc(size);
+    __ASSERT_NO_MSG(mem_ptr != 0);
+
+    memcpy(mem_ptr, &tx_data, size);
+
+    k_fifo_put(&led_fifo, mem_ptr);
+}
+
+void led_watcher(void)
+{
+	while (1) {
+		struct led_data_t *rx_data = k_fifo_get(&led_fifo,
+							   K_FOREVER);
+
+        if (rx_data->index) {
+            printk("Toggled led with index %d;",
+		        rx_data->index);
+            display_value(rx_data->index);
+        } else {
+            display_battery();
+        }
+		k_free(rx_data);
+	}
+}
+
+K_THREAD_DEFINE(led_watcher_id, STACKSIZE, led_watcher, NULL, NULL, NULL,
+		PRIORITY, 0, 0);
