@@ -15,9 +15,11 @@
 #include <zmk/events/layer_state_changed.h>
 #include <zmk/events/keycode_state_changed.h>
 
-
 void send_display_battery(void);
 void send_display_value(uint8_t value);
+void toggle_caps_lock_led();
+void toggle_scroll_lock_led();
+void toggle_num_lock_led();
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
@@ -80,8 +82,27 @@ ZMK_LISTENER(layer, layer_event_listener);
 ZMK_SUBSCRIPTION(layer, zmk_layer_state_changed);
 
 static int hid_listener_keycode_pressed(const struct zmk_keycode_state_changed *ev) {
-    if (ev->keycode == HID_USAGE_KEY_KEYBOARD_F24) {
-        send_display_battery();
+    switch (ev->keycode) {
+    case HID_USAGE_KEY_KEYBOARD_F24:
+        if (ev->state) {
+            send_display_battery();
+        }
+        break;
+    case HID_USAGE_KEY_KEYBOARD_CAPS_LOCK:
+        if (ev->state) {
+            toggle_caps_lock_led();
+        }
+        break;
+    case HID_USAGE_KEY_KEYBOARD_SCROLL_LOCK:
+        if (ev->state) {
+            toggle_scroll_lock_led();
+        }
+        break;
+    case HID_USAGE_KEY_KEYPAD_NUM_LOCK_AND_CLEAR:
+        if (ev->state) {
+            toggle_num_lock_led();
+        }
+        break;
     }
     return 0;
 }

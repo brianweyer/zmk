@@ -11,7 +11,6 @@
 #include <zephyr/sys/__assert.h>
 #include <string.h>
 
-
 #include <zephyr/bluetooth/services/bas.h>
 
 #include <zephyr/logging/log.h>
@@ -38,11 +37,14 @@ struct led {
     const char *gpio_pin_name;
     unsigned int gpio_pin;
     unsigned int gpio_flags;
+    bool persistent_state;
 };
 
 struct led_data_t {
     void *fifo_reserved;
     uint32_t index;
+    bool battery;
+    bool display;
 };
 
 K_FIFO_DEFINE(led_fifo);
@@ -51,7 +53,7 @@ static void blink(const struct led *, uint32_t);
 void send_display_battery(void);
 void send_display_value(uint8_t value);
 
-enum { LED_CAP, LED_NUM, LED_SCR, LED_KEY };
+enum led_idx { LED_CAP, LED_NUM, LED_SCR, LED_KEY };
 struct led leds[] = {[LED_CAP] =
                          {
                              .gpio_dev = DEVICE_DT_GET(DT_GPIO_CTLR(LED_1_NODE, gpios)),
@@ -94,6 +96,7 @@ static int led_init(const struct device *dev) {
                    leds[i].gpio_pin_name);
             return -EIO;
         }
+        leds[i].persistent_state = false;
     }
     return 1;
 }
@@ -110,19 +113,44 @@ static inline void ledON(const struct led *led) { gpio_pin_set(led->gpio_dev, le
 
 static inline void ledOFF(const struct led *led) { gpio_pin_set(led->gpio_dev, led->gpio_pin, 0); }
 
+static void restore_persistent_states(void) {
+    for (int i = 0; i < (sizeof(leds) / sizeof(struct led)); i++) {
+        if (leds[i].persistent_state) {
+            ledON(&leds[i]);
+        }
+    }
+}
+
 static void led_all_OFF() {
+    for (int i = 0; i < (sizeof(leds) / sizeof(struct led)); i++) {
+        if (!leds[i].persistent_state) {
+            gpio_pin_set(leds[i].gpio_dev, leds[i].gpio_pin, 0);
+        }
+    }
+    restore_persistent_states();
+};
+
+static void set_led_state(enum led_idx idx, bool state) {
+    leds[idx].persistent_state = state;
+    if (state) {
+        ledON(&leds[idx]);
+    } else {
+        ledOFF(&leds[idx]);
+    }
+}
+
+#define BATTERY_LED_SLEEP_PERIOD 50
+
+void display_battery(void) {
+
+    uint8_t level = bt_bas_get_battery_level();
     for (int i = 0; i < (sizeof(leds) / sizeof(struct led)); i++) {
         gpio_pin_set(leds[i].gpio_dev, leds[i].gpio_pin, 0);
     }
-};
-
-#define BATTERY_LED_SLEEP_PERIOD 100
-
-void display_battery(void) {
-    uint8_t level = bt_bas_get_battery_level();
+    k_msleep(BATTERY_LED_SLEEP_PERIOD);
     if (level <= 10) {
         for (int i = 0; i < 5; i++) {
-            blink(&leds[0], BATTERY_LED_SLEEP_PERIOD*40);
+            blink(&leds[0], BATTERY_LED_SLEEP_PERIOD * 20);
             k_msleep(BATTERY_LED_SLEEP_PERIOD);
         }
     } else {
@@ -140,35 +168,45 @@ void display_battery(void) {
             ledON(&leds[3]);
             k_msleep(BATTERY_LED_SLEEP_PERIOD);
         }
-        k_msleep(BATTERY_LED_SLEEP_PERIOD*40);
+        k_msleep(BATTERY_LED_SLEEP_PERIOD * 10);
     }
     led_all_OFF();
 }
 
-#define LEVEL_LED_SLEEP_PERIOD 500
+#define LEVEL_LED_SLEEP_PERIOD 300
 
 void display_value(uint8_t value) {
-    if (value > 3) {
+    for (int i = 0; i < (sizeof(leds) / sizeof(struct led)); i++) {
+        gpio_pin_set(leds[i].gpio_dev, leds[i].gpio_pin, 0);
+    }
+
+    k_msleep(LEVEL_LED_SLEEP_PERIOD);
+
+    if (value == 4) {
         ledON(&leds[3]);
-        value -= 4;
+        // value -= 100;
     }
-    if (value > 2) {
+    if (value == 3) {
         ledON(&leds[2]);
-        value -= 3;
+        // value -= 100;
     }
-    if (value > 1) {
+    if (value == 2) {
         ledON(&leds[1]);
-        value -= 2;
+        // value -= 100;
     }
-    if (value > 0) {
+    if (value == 1 || value == 0) {
         ledON(&leds[0]);
     }
+
     k_msleep(LEVEL_LED_SLEEP_PERIOD);
-    led_all_OFF();
+    for (int i = 0; i < (sizeof(leds) / sizeof(struct led)); i++) {
+        gpio_pin_set(leds[i].gpio_dev, leds[i].gpio_pin, 0);
+    }
+    restore_persistent_states();
 };
 
 void send_display_value(uint8_t index) {
-    struct led_data_t tx_data = { .index = index };
+    struct led_data_t tx_data = {.index = index, .display = true};
 
     size_t size = sizeof(struct led_data_t);
     char *mem_ptr = k_malloc(size);
@@ -180,7 +218,7 @@ void send_display_value(uint8_t index) {
 }
 
 void send_display_battery() {
-    struct led_data_t tx_data = {};
+    struct led_data_t tx_data = {.battery = true};
 
     size_t size = sizeof(struct led_data_t);
     char *mem_ptr = k_malloc(size);
@@ -191,22 +229,26 @@ void send_display_battery() {
     k_fifo_put(&led_fifo, mem_ptr);
 }
 
-void led_watcher(void)
-{
-	while (1) {
-		struct led_data_t *rx_data = k_fifo_get(&led_fifo,
-							   K_FOREVER);
+void toggle_caps_lock_led() { set_led_state(LED_CAP, !leds[LED_CAP].persistent_state); }
 
-        if (rx_data->index) {
-            printk("Toggled led with index %d;",
-		        rx_data->index);
+void toggle_scroll_lock_led() { set_led_state(LED_SCR, !leds[LED_SCR].persistent_state); }
+
+void toggle_num_lock_led() { set_led_state(LED_NUM, !leds[LED_NUM].persistent_state); }
+
+void led_watcher(void) {
+    while (1) {
+        struct led_data_t *rx_data = k_fifo_get(&led_fifo, K_FOREVER);
+
+        if (rx_data->display) {
+            printk("Toggled led with index %d;", rx_data->index);
             display_value(rx_data->index);
-        } else {
+        }
+        if (rx_data->battery) {
+            printk("Displaying battery level");
             display_battery();
         }
-		k_free(rx_data);
-	}
+        k_free(rx_data);
+    }
 }
 
-K_THREAD_DEFINE(led_watcher_id, STACKSIZE, led_watcher, NULL, NULL, NULL,
-		PRIORITY, 0, 0);
+K_THREAD_DEFINE(led_watcher_id, STACKSIZE, led_watcher, NULL, NULL, NULL, PRIORITY, 0, 0);
