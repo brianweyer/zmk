@@ -56,7 +56,6 @@
 #include <dt-bindings/zmk/matrix_transform.h>
 #include <dt-bindings/zmk/battery_status.h>
 #include "kinesisble-pinctrl.dtsi"
-#include "../../usb_console.dtsi"
 
 / {
     chosen {
@@ -272,7 +271,7 @@
     };
 };
 
-&usbd {
+zephyr_udc0: &usbd {
     status = "okay";
     cdc_acm_uart: cdc_acm_uart {
         compatible = "zephyr,cdc-acm-uart";
