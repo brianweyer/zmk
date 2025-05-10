@@ -10,48 +10,40 @@
 #include <dt-bindings/zmk/battery_status.h>
 
 #define DEFAULT 0
-#define WINDOWS   1
-#define PC   2
-#define KEYPAD   3
-#define ADJUSTMENT   4
+#define MAC   1
+#define WINDOWS   2
+#define PC   3
+#define KEYPAD   4
+#define ADJUSTMENT   5
+#define COMBO(NAME, BINDINGS, KEYPOS) \
+combo_##NAME { \
+    timeout-ms = <50>; \
+    bindings = <BINDINGS>; \
+    key-positions = <KEYPOS>; \
+    layers = <0 1 2 3>; \
+};
 
 / {
     behaviors {
-        // tap for momentary layer, hold for toggle
+        // hold for keypress, tap to toggle layer
         prog_key: program_key {
             compatible = "zmk,behavior-hold-tap";
             label = "PROGRAM_KEY";
             #binding-cells = <2>;
-            tapping-term-ms = <200>;
-            bindings = <&mo>, <&tog>;
+            tapping-term-ms = <500>;
+            bindings = <&tog>, <&kp>;
+            hold-trigger-on-release;
         };
     };
+
     combos {
         compatible = "zmk,combos";
-        combo_win {
-            timeout-ms = <50>;
-            key-positions = <19 33>; // = + w
-            bindings = <&tog WINDOWS>;
-        };
-        combo_def {
-            timeout-ms = <50>;
-            key-positions = <19 46>; // = + d
-            bindings = <&tog DEFAULT>;
-        };
-        combo_pc {
-            timeout-ms = <50>;
-            key-positions = <19 41>; // = + p
-            bindings = <&tog PC>;
-        };
-        combo_mac {
-            timeout-ms = <50>;
-            key-positions = <19 62>; // = + m
-            bindings = <&tog DEFAULT>;
-        };
+        COMBO(win, &to WINDOWS, 18 32) // = + w
+        COMBO(pc, &to PC, 18 40) // = + p
+        COMBO(mac, &to MAC, 18 61) // = + m
+        COMBO(keypad, &to KEYPAD, 18 50) // = + k
     };
-};
 
-/ {
     keymap0: keymap {
         compatible = "zmk,keymap";
 
@@ -59,12 +51,25 @@
         default_layer {
             bindings = <
             &kp ESC   &kp F1    &kp F2   &kp F3    &kp F4    &kp F5    &kp F6   &kp F7   &kp F8
-            &kp F9   &kp F10  &kp F11   &kp F12  &kp PSCRN &kp SLCK  &kp F24 &tog KEYPAD &tog ADJUSTMENT
+            &kp F9   &kp F10  &kp F11   &kp F12  &kp PSCRN &kp SLCK  &kp PAUSE_BREAK &tog KEYPAD &prog_key ADJUSTMENT F24
             &kp EQUAL &kp N1    &kp N2   &kp N3    &kp N4    &kp N5          &kp N6   &kp N7   &kp N8    &kp N9   &kp N0   &kp MINUS
             &kp TAB   &kp Q     &kp W    &kp E     &kp R     &kp T           &kp Y    &kp U    &kp I     &kp O    &kp P    &kp BSLH
             &kp CLCK  &kp A     &kp S    &kp D     &kp F     &kp G           &kp H    &kp J    &kp K     &kp L    &kp SEMI &kp SQT
             &kp LSHFT &kp Z     &kp X    &kp C     &kp V     &kp B           &kp N    &kp M    &kp COMMA &kp DOT  &kp FSLH &kp RSHFT
             &kp GRAVE &kp BSLH &kp LEFT  &kp RIGHT                          &kp UP   &kp DOWN  &kp LBKT &kp RBKT
+            &kp LGUI &kp LALT        &kp RCTRL &kp RGUI
+            &kp BSPC  &kp DEL   &kp HOME        &kp PG_UP &kp ENTER &kp SPACE
+            &kp END         &kp PG_DN
+            >;
+        };
+        mac_layer {
+            bindings = <
+            &trans &trans  &trans  &trans  &trans  &trans &trans &trans &trans  &trans &trans &trans  &trans &trans &trans &trans &trans &trans
+            &trans  &trans  &trans  &trans  &trans  &trans                                      &trans  &trans  &trans  &trans  &trans  &trans
+            &trans  &trans  &trans  &trans  &trans  &trans                                      &trans  &trans  &trans  &trans  &trans  &trans
+            &trans  &trans  &trans  &trans  &trans  &trans                                      &trans  &trans  &trans  &trans  &trans  &trans
+            &trans  &trans  &trans  &trans  &trans  &trans                                      &trans  &trans  &trans  &trans  &trans  &trans
+            &trans  &trans  &trans  &trans                                      &trans  &trans  &trans  &trans
             &kp LGUI &kp LALT        &kp RCTRL &kp RGUI
             &kp BSPC  &kp DEL   &kp HOME        &kp PG_UP &kp ENTER &kp SPACE
             &kp END         &kp PG_DN
@@ -98,21 +103,20 @@
         };
         keypad_layer {
             bindings = <
-            &kp ESC   &kp F1    &kp F2   &kp F3    &kp F4    &kp F5    &kp F6   &kp F7   &kp F8
-            &kp F9   &kp F10  &kp F11   &kp F12  &kp PSCRN &kp SLCK &kp PAUSE_BREAK &tog KEYPAD &tog ADJUSTMENT
-            &none       &none        &none         &none        &none        &none        &none     &kp KP_NUM  &kp KP_EQUAL &kp KP_SLASH  &kp KP_MULTIPLY &none
+            &trans &trans  &trans  &trans  &trans  &trans &trans &trans &trans  &trans &trans &trans  &trans &trans &trans &trans &tog KEYPAD &none
+            &none       &none        &none         &none        &none        &none        &none     &kp KP_NUM  &kp EQUAL &kp KP_SLASH  &kp KP_MULTIPLY &none
             &none       &none        &none         &none        &none        &none        &none     &kp KP_N7   &kp KP_N8    &kp KP_N9     &kp KP_MINUS    &none
             &none       &none        &none         &none        &none        &none        &none     &kp KP_N4   &kp KP_N5    &kp KP_N6     &kp KP_PLUS     &none
-            &bt BT_CLR  &bt BT_SEL 0 &bt BT_SEL 1  &bt BT_SEL 2 &bt BT_SEL 3 &bt BT_SEL 4 &none     &kp KP_N1   &kp KP_N2    &kp KP_N3     &kp KP_ENTER    &none
+            &none      &none        &none         &none        &none        &none        &none     &kp KP_N1   &kp KP_N2    &kp KP_N3     &kp KP_ENTER    &none
             &none       &kp INS       &kp LEFT     &kp RIGHT                           &kp UP      &kp DOWN     &kp KP_DOT    &kp KP_ENTER
-            &kp LGUI &kp LALT        &kp RCTRL &kp RGUI
-            &kp BSPC  &kp DEL   &kp HOME        &kp PG_UP &kp ENTER &kp SPACE
-            &kp END         &kp PG_DN
+            &none  &none                        &none  &none
+            &none  &none  &none                        &none  &none &kp KP_N0
+            &none                        &none
             >;
         };
         adjustment_layer {
             bindings = <
-            &bt BT_CLR &bt BT_SEL 0  &bt BT_SEL 1  &bt BT_SEL 2  &bt BT_SEL 3  &bt BT_SEL 4 &none &none &none  &bt BT_CLR &bootloader &sys_reset  &none &none &none &sys_reset &tog KEYPAD &tog ADJUSTMENT
+            &bt BT_CLR &bt BT_SEL 0  &bt BT_SEL 1  &bt BT_SEL 2  &bt BT_SEL 3  &bt BT_SEL 4 &none &none &none  &none &bootloader &sys_reset  &none &none &none &none &none &tog ADJUSTMENT
             &none  &none  &none  &none  &none  &none                                      &none  &none  &none  &none  &none  &none
             &none  &none  &none  &none  &none  &none                                      &none  &none  &none  &none  &none  &none
             &none  &none  &none  &none  &none  &none                                      &none  &none  &none  &none  &none  &none
