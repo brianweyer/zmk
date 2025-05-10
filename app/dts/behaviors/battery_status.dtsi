@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2021 The ZMK Contributors
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+ / {
+	behaviors {
+		/omit-if-no-ref/ battery_status: behavior_battery_status {
+			compatible = "zmk,behavior-battery-status";
+			label = "BATTERY_STATUS";
+			#binding-cells = <0>;
+		};
+	};
+};
