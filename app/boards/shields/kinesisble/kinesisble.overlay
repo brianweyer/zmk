@@ -86,10 +86,11 @@
             label = "KEY LED";
             status = "okay";
         };
+        // Reserved for a future power LED next to the on/off switch; not fitted yet.
         led_pow: led_pow {
             gpios = <&feather_header 5 GPIO_ACTIVE_HIGH>;
             label = "BUTTON LED";
-            status = "okay";
+            status = "disabled";
         };
     };
 
