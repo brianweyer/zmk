@@ -121,6 +121,7 @@
 
     kscan0: kscan {
         compatible = "zmk,kscan-gpio-matrix";
+        wakeup-source;
 
         diode-direction = "col2row";
         row-gpios
@@ -228,4 +229,10 @@
         reg = <0>;
         ngpios = <16>;
     };
+};
+
+/* The /uf2 board variant adds a USB serial console; keep it off unless the
+ * zmk-usb-logging snippet adds its own. */
+&board_cdc_acm_uart {
+    status = "disabled";
 };

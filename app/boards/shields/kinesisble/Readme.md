@@ -9,11 +9,34 @@ This firmware was used with the hardware fork from:
 https://github.com/ergodone/KinesisBLE
 
 
-To build firmware
-From app directory do:
-west build -p -b adafruit_feather_nrf52840/nrf52840/uf2 -- -DSHIELD=kinesisble
+## Building
 
-Then copy build/zephyr/zmk.uf2 onto the FTHR840BOOT drive (double-tap reset to enter the bootloader).
+From the `app` directory:
+
+    west build -p -b adafruit_feather_nrf52840/nrf52840/uf2 -- -DSHIELD=kinesisble
+
+Enter the bootloader (`&bootloader` on the adjustment layer, or double-tap the
+Feather's reset button), then copy `build/zephyr/zmk.uf2` onto the
+`FTHR840BOOT` drive. Bluetooth pairings survive reflashing.
+
+### Debug build with USB logging
+
+The normal firmware has no USB serial console, to save power. For a debug
+build that logs over USB, add the `zmk-usb-logging` snippet:
+
+    west build -p -b adafruit_feather_nrf52840/nrf52840/uf2 -S zmk-usb-logging -- -DSHIELD=kinesisble
+
+Then read the logs on macOS with `cu -l /dev/tty.usbmodem*` (or `screen`).
+The build prints three "assigned n but got y" Kconfig warnings; they are
+expected, since the snippet overrides the shield's console defaults.
+
+## Indicator LEDs
+
+- Battery level is shown at power-on (and so on wake, since waking from deep
+  sleep restarts the board) and when F24 is pressed: one LED per 25%, or five
+  blinks of the caps LED at 10% or below.
+- Switching Bluetooth profile or turning on a layer briefly lights LED N for
+  profile/layer N (all four for 5 and up).
 
 
 To restore original Adafruit firmware download from:
